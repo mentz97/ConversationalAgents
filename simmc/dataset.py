@@ -14,16 +14,8 @@ __val_api = pkg_resources.resource_filename(
     'simmc', 'data/fashion_dev_dials_api_calls.json')
 
 
-class Mode(Enum):
-    Train = 0,
-    Validation = 1
-
-
-def GetSentences(mode: Mode):
-    if mode == Mode.Train:
-        filePath = __train_data
-    elif mode == Mode.Train:
-        filePath = __val_data
+def GetSentences(train: bool = False):
+    filePath = __train_data if train else __val_data
 
     with open(filePath, 'r') as file:
         data = json.load(file)
@@ -38,11 +30,8 @@ def GetSentences(mode: Mode):
         return turn_ids, sentences
 
 
-def GetAPI(mode: Mode):
-    if mode == Mode.Train:
-        filePath = __train_api
-    elif mode == Mode.Train:
-        filePath = __val_api
+def GetAPI(train: bool = False):
+    filePath = __train_api if train else __val_api
 
     with open(filePath, 'r') as file:
         data = json.load(file)
