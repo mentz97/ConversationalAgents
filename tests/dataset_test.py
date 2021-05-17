@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
-from simmc import GetSentences, GetAPI, Mode
+from simmc import GetSentences, GetAPI
 
 
 def test_train_sentences():
-    ids, sentences = GetSentences(Mode.Train)
+    ids, sentences = GetSentences(train=True)
 
     assert len(ids) == 21196
     assert len(sentences) == 21196
@@ -14,7 +14,7 @@ def test_train_sentences():
 
 
 def test_train_api():
-    actions, attributes = GetAPI(Mode.Train)
+    actions, attributes = GetAPI(train=True)
 
     assert len(actions) == 21196
     assert len(attributes) == 21196
