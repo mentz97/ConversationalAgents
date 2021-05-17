@@ -1,0 +1,4 @@
+include simmc/data/fashion_train_dials.json
+include simmc/data/fashion_train_dials_api_calls.json
+include simmc/data/fashion_dev_dials.json
+include simmc/data/fashion_dev_dials_api_calls.json
