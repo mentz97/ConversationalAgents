@@ -38,7 +38,7 @@ def GetSentences(mode: Mode):
         return turn_ids, sentences
 
 
-def GetAPI(mode: Mode, return_attributes_binary: bool = False):
+def GetAPI(mode: Mode):
     if mode == Mode.Train:
         filePath = __train_api
     elif mode == Mode.Train:
@@ -53,8 +53,5 @@ def GetAPI(mode: Mode, return_attributes_binary: bool = False):
 
         attributes = list(
             map(lambda x: x['attributes'] if x is not None else [], supervisions))
-
-        if return_attributes_binary:
-            attributes = sklearn.preprocessing.MultiLabelBinarizer().fit_transform(attributes)
 
         return actions, attributes

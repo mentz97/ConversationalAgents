@@ -25,17 +25,3 @@ def test_train_api():
     assert attributes[0][0] == 'pattern'
     assert len(attributes[1]) == 0
     assert len(attributes[19]) == 2
-
-
-def test_train_api_binary():
-    actions, attributes = GetAPI(Mode.Train, return_attributes_binary=True)
-
-    assert len(actions) == 21196
-    assert len(attributes) == 21196
-
-    assert len(attributes[0]) == 33
-    assert np.count_nonzero(attributes[0]) == 1
-    assert len(attributes[1]) == 33
-    assert np.count_nonzero(attributes[1]) == 0
-    assert len(attributes[19]) == 33
-    assert np.count_nonzero(attributes[19]) == 2
