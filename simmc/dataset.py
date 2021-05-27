@@ -16,7 +16,15 @@ __valAPIFile = os.path.join(
     __location__, 'data/fashion_dev_dials_api_calls.json')
 
 
-def GetAPI(train: bool = False, return_turn_ids=True, return_sentences=True, return_actions=True, return_attributes=True, return_counter=False, min_attribute_occ=0):
+def GetAPI(train: bool = False,
+           return_turn_ids: bool = True,
+           return_sentences: bool = True,
+           return_actions: bool = True,
+           return_attributes: bool = True,
+           return_counter: bool = False,
+           return_excluded_attributes: bool = False,
+           min_attribute_occ: int = 0,
+           exclude_attributes: list[str] = []):
     turn_ids = []
     sentences = []
     actions = []
@@ -55,11 +63,14 @@ def GetAPI(train: bool = False, return_turn_ids=True, return_sentences=True, ret
             counter = collections.Counter(
                 [y for x in list(filter(None, attributes_list)) for y in x])
 
-            exclude_attributes = [key for key,
-                                  val in counter.items() if val < min_attribute_occ]
+            excluded_attributes = [key for key,
+                                   val in counter.items() if val < min_attribute_occ]
 
             if return_counter:
                 obj['counter'] = counter
+
+            if return_excluded_attributes:
+                obj['excluded_attributes'] = excluded_attributes
 
     obj['results'] = []
     for i, (turn_id, sentence, action, attributes) in enumerate(zip(turn_ids, sentences, actions, attributes_list), start=0):
@@ -72,11 +83,6 @@ def GetAPI(train: bool = False, return_turn_ids=True, return_sentences=True, ret
             obj['results'][i]['action'] = action
         if return_attributes:
             obj['results'][i]['attributes'] = [
-                x for x in attributes if x not in exclude_attributes]
+                x for x in attributes if x not in excluded_attributes or x not in exclude_attributes]
 
     return obj
-
-
-if __name__ == '__main__':
-    res = GetAPI(train=True, return_counter=True, min_attribute_occ=15)
-    print(set([a for x in res['results'] for a in x['attributes']]))
