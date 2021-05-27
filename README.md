@@ -31,12 +31,12 @@ To run tests and scripts you must source the virtual environment every time you 
 ```bash
 (.env) $ pytest
 
-============================================ test session starts =============================================
+============================= test session starts ==============================
 platform darwin -- Python 3.9.5, pytest-6.2.4, py-1.10.0, pluggy-0.13.1
 rootdir: /Users/pettinz/Developer/machine_learning/ML_project
 collected 3 items                                                                                                                                                                                                                                                                                                
 
-simmc/dataset_test.py ...                                                                               [100%]
+simmc/dataset_test.py ...                                                 [100%]
 
-============================================= 3 passed in 7.20s ==============================================
+============================== 3 passed in 7.20s ===============================
 ```
