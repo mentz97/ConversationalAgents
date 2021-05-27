@@ -64,7 +64,7 @@ def GetAPI(train: bool = False,
                 [y for x in list(filter(None, attributes_list)) for y in x])
 
             excluded_attributes = [key for key,
-                                   val in counter.items() if val < min_attribute_occ]
+                                   val in counter.items() if val < min_attribute_occ or key in exclude_attributes]
 
             if return_counter:
                 obj['counter'] = counter
@@ -83,6 +83,6 @@ def GetAPI(train: bool = False,
             obj['results'][i]['action'] = action
         if return_attributes:
             obj['results'][i]['attributes'] = [
-                x for x in attributes if x not in excluded_attributes or x not in exclude_attributes]
+                x for x in attributes if x not in excluded_attributes and x not in exclude_attributes]
 
     return obj

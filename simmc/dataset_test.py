@@ -18,7 +18,19 @@ def test_GetAPI():
 
 
 def test_GetAPI_withMinAttributeOcc():
-    res = GetAPI(train=True, min_attribute_occ=15)
+    res = GetAPI(train=True, min_attribute_occ=15,
+                 return_excluded_attributes=True)
 
     assert set([a for x in res['results'] for a in x['attributes']]) == {'info', 'necklineStyle', 'clothingStyle', 'skirtStyle', 'pattern', 'customerRating', 'sleeveLength', 'material',
                                                                          'waistStyle', 'price', 'hemStyle', 'jacketStyle', 'brand', 'size', 'color', 'embellishment', 'dressStyle', 'hemLength', 'sweaterStyle', 'availableSizes', 'sleeveStyle'}
+    assert res['excluded_attributes'] == ['clothingCategory', 'madeIn', 'skirtLength', 'ageRange', 'soldBy',
+                                          'forGender', 'waterResistance', 'warmthRating', 'sequential', 'hasPart', 'amountInStock', 'forOccasion']
+
+
+def test_GetAPI_withMinAttributeOccAndExcludeList():
+    res = GetAPI(train=True, min_attribute_occ=15, exclude_attributes=[
+                 'info'], return_excluded_attributes=True)
+    assert set([a for x in res['results'] for a in x['attributes']]) == {'necklineStyle', 'clothingStyle', 'skirtStyle', 'pattern', 'customerRating', 'sleeveLength', 'material',
+                                                                         'waistStyle', 'price', 'hemStyle', 'jacketStyle', 'brand', 'size', 'color', 'embellishment', 'dressStyle', 'hemLength', 'sweaterStyle', 'availableSizes', 'sleeveStyle'}
+    assert res['excluded_attributes'] == ['info', 'clothingCategory', 'madeIn', 'skirtLength', 'ageRange', 'soldBy',
+                                          'forGender', 'waterResistance', 'warmthRating', 'sequential', 'hasPart', 'amountInStock', 'forOccasion']
