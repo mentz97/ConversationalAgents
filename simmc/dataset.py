@@ -1,46 +1,82 @@
 import json
-import sklearn.preprocessing
-import pkg_resources
+import os
+import collections
 
 from enum import Enum
 
-__train_data = pkg_resources.resource_filename(
-    'simmc', 'data/fashion_train_dials.json')
-__train_api = pkg_resources.resource_filename(
-    'simmc', 'data/fashion_train_dials_api_calls.json')
-__val_data = pkg_resources.resource_filename(
-    'simmc', 'data/fashion_dev_dials.json')
-__val_api = pkg_resources.resource_filename(
-    'simmc', 'data/fashion_dev_dials_api_calls.json')
+
+__location__ = os.path.realpath(os.path.join(
+    os.getcwd(), os.path.dirname(__file__)))
+
+__trainFile = os.path.join(__location__, 'data/fashion_train_dials.json')
+__trainAPIFile = os.path.join(
+    __location__, 'data/fashion_train_dials_api_calls.json')
+__valFile = os.path.join(__location__, 'data/fashion_dev_dials.json')
+__valAPIFile = os.path.join(
+    __location__, 'data/fashion_dev_dials_api_calls.json')
 
 
-def GetSentences(train: bool = False):
-    filePath = __train_data if train else __val_data
+def GetAPI(train: bool = False, return_turn_ids=True, return_sentences=True, return_actions=True, return_attributes=True, return_counter=False, min_attribute_occ=0):
+    turn_ids = []
+    sentences = []
+    actions = []
+    attributes_list = []
+    counter = []
 
-    with open(filePath, 'r') as file:
+    obj = {}
+
+    if all([return_turn_ids, return_sentences, return_actions, return_attributes]) is False:
+        return None
+
+    with open(__trainFile if train else __valFile, 'r') as file:
         data = json.load(file)
 
         dialogues = list(map(lambda d: d['dialogue'], data['dialogue_data']))
 
-        turn_ids = [sentence['turn_idx']
-                    for dialogue in dialogues for sentence in dialogue]
-        sentences = [sentence['transcript']
-                     for dialogue in dialogues for sentence in dialogue]
+        if return_turn_ids:
+            turn_ids = [sentence['turn_idx']
+                        for dialogue in dialogues for sentence in dialogue]
+        if return_sentences:
+            sentences = [sentence['transcript']
+                         for dialogue in dialogues for sentence in dialogue]
 
-        return turn_ids, sentences
-
-
-def GetAPI(train: bool = False):
-    filePath = __train_api if train else __val_api
-
-    with open(filePath, 'r') as file:
+    with open(__trainAPIFile if train else __valAPIFile, 'r') as file:
         data = json.load(file)
 
-        actions = [j['action'] for i in data for j in i['actions']]
-        supervisions = [j['action_supervision']
-                        for i in data for j in i['actions']]
+        if return_actions:
+            actions = [j['action'] for i in data for j in i['actions']]
 
-        attributes = list(
-            map(lambda x: x['attributes'] if x is not None else [], supervisions))
+        if return_attributes:
+            supervisions = [j['action_supervision']
+                            for i in data for j in i['actions']]
+            attributes_list = list(
+                map(lambda x: x['attributes'] if x is not None else [], supervisions))
 
-        return actions, attributes
+            counter = collections.Counter(
+                [y for x in list(filter(None, attributes_list)) for y in x])
+
+            exclude_attributes = [key for key,
+                                  val in counter.items() if val < min_attribute_occ]
+
+            if return_counter:
+                obj['counter'] = counter
+
+    obj['results'] = []
+    for i, (turn_id, sentence, action, attributes) in enumerate(zip(turn_ids, sentences, actions, attributes_list), start=0):
+        obj['results'].append({})
+        if return_turn_ids:
+            obj['results'][i]['turn_id'] = turn_id
+        if return_sentences:
+            obj['results'][i]['sentence'] = sentence
+        if return_actions:
+            obj['results'][i]['action'] = action
+        if return_attributes:
+            obj['results'][i]['attributes'] = [
+                x for x in attributes if x not in exclude_attributes]
+
+    return obj
+
+
+if __name__ == '__main__':
+    res = GetAPI(train=True, return_counter=True, min_attribute_occ=15)
+    print(set([a for x in res['results'] for a in x['attributes']]))

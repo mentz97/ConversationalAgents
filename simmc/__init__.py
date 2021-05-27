@@ -1,1 +1,1 @@
-from .dataset import GetAPI, GetSentences
+from .dataset import GetAPI
