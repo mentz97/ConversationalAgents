@@ -1,13 +1,14 @@
 import json
 import os
 import collections
-
-from enum import Enum
+import typing
+import torch
+import transformers
+import sklearn.preprocessing
 
 
 __location__ = os.path.realpath(os.path.join(
     os.getcwd(), os.path.dirname(__file__)))
-
 __trainFile = os.path.join(__location__, 'data/fashion_train_dials.json')
 __trainAPIFile = os.path.join(
     __location__, 'data/fashion_train_dials_api_calls.json')
@@ -15,74 +16,150 @@ __valFile = os.path.join(__location__, 'data/fashion_dev_dials.json')
 __valAPIFile = os.path.join(
     __location__, 'data/fashion_dev_dials_api_calls.json')
 
+le_actions = sklearn.preprocessing.LabelEncoder()
+mlb_attributes = sklearn.preprocessing.MultiLabelBinarizer()
+
+le_actions.fit(['SearchDatabase',
+                'SearchMemory',
+                'SpecifyInfo',
+                'AddToCart',
+                'None'])
+mlb_attributes.fit([['ageRange',
+                     'amountInStock',
+                     'availableSizes',
+                     'brand',
+                     'clothingCategory',
+                     'clothingStyle',
+                     'color',
+                     'customerRating',
+                     'dressStyle',
+                     'embellishment',
+                     'forGender',
+                     'forOccasion',
+                     'hasPart',
+                     'hemLength',
+                     'hemStyle',
+                     'info',
+                     'jacketStyle',
+                     'madeIn',
+                     'material',
+                     'necklineStyle',
+                     'pattern',
+                     'price',
+                     'sequential',
+                     'size',
+                     'skirtLength',
+                     'skirtStyle',
+                     'sleeveLength',
+                     'sleeveStyle',
+                     'soldBy',
+                     'sweaterStyle',
+                     'waistStyle',
+                     'warmthRating',
+                     'waterResistance']])
+
+
+class SentenceData():
+    def __init__(self, turn_id: int, sentence: str, action: str, attributes: typing.List[str], dialogue_id: int) -> None:
+        self.turn_id = turn_id
+        self.sentence = sentence
+        self.action = action
+        self.attributes = attributes
+        self.dialogue_id = dialogue_id
+
 
 def GetAPI(train: bool = False,
-           return_turn_ids: bool = True,
-           return_sentences: bool = True,
-           return_actions: bool = True,
-           return_attributes: bool = True,
            return_counter: bool = False,
            return_excluded_attributes: bool = False,
+           concatenate: bool = False,
            min_attribute_occ: int = 0,
-           exclude_attributes: list[str] = []):
-    turn_ids = []
-    sentences = []
+           exclude_attributes: typing.List[str] = []):
     actions = []
     attributes_list = []
     counter = []
 
     obj = {}
 
-    if all([return_turn_ids, return_sentences, return_actions, return_attributes]) is False:
-        return None
-
     with open(__trainFile if train else __valFile, 'r') as file:
         data = json.load(file)
 
         dialogues = list(map(lambda d: d['dialogue'], data['dialogue_data']))
 
-        if return_turn_ids:
-            turn_ids = [sentence['turn_idx']
-                        for dialogue in dialogues for sentence in dialogue]
-        if return_sentences:
+        turn_ids = [sentence['turn_idx']
+                    for dialogue in dialogues for sentence in dialogue]
+
+        if concatenate:
+            sentences = []
+            for dialogue in dialogues:
+                concatenated = ""
+                for sentence in dialogue:
+                    concatenated = "[CLS] " + sentence['transcript'] if concatenated == "" else concatenated + \
+                        " [SEP] " + sentence['transcript']
+                    sentences.append(concatenated)
+        else:
             sentences = [sentence['transcript']
-                         for dialogue in dialogues for sentence in dialogue]
+                            for dialogue in dialogues for sentence in dialogue]
 
     with open(__trainAPIFile if train else __valAPIFile, 'r') as file:
         data = json.load(file)
 
-        if return_actions:
-            actions = [j['action'] for i in data for j in i['actions']]
+        dialogue_ids = [i['dialog_id'] for i in data for j in i['actions']]
+        actions = [j['action'] for i in data for j in i['actions']]
+        attributes_list = list(map(lambda x: x['attributes'] if x is not None else [], [
+                               j['action_supervision'] for i in data for j in i['actions']]))
+        counter = collections.Counter(
+            [y for x in list(filter(None, attributes_list)) for y in x])
+        excluded_attributes = [key for key,
+                               val in counter.items() if val < min_attribute_occ or key in exclude_attributes]
 
-        if return_attributes:
-            supervisions = [j['action_supervision']
-                            for i in data for j in i['actions']]
-            attributes_list = list(
-                map(lambda x: x['attributes'] if x is not None else [], supervisions))
+        if return_counter:
+            obj['counter'] = counter
 
-            counter = collections.Counter(
-                [y for x in list(filter(None, attributes_list)) for y in x])
-
-            excluded_attributes = [key for key,
-                                   val in counter.items() if val < min_attribute_occ or key in exclude_attributes]
-
-            if return_counter:
-                obj['counter'] = counter
-
-            if return_excluded_attributes:
-                obj['excluded_attributes'] = excluded_attributes
+        if return_excluded_attributes:
+            obj['excluded_attributes'] = excluded_attributes
 
     obj['results'] = []
-    for i, (turn_id, sentence, action, attributes) in enumerate(zip(turn_ids, sentences, actions, attributes_list), start=0):
-        obj['results'].append({})
-        if return_turn_ids:
-            obj['results'][i]['turn_id'] = turn_id
-        if return_sentences:
-            obj['results'][i]['sentence'] = sentence
-        if return_actions:
-            obj['results'][i]['action'] = action
-        if return_attributes:
-            obj['results'][i]['attributes'] = [
-                x for x in attributes if x not in excluded_attributes and x not in exclude_attributes]
+    for (turn_id, sentence, action, attributes, dialogue_id) in zip(turn_ids, sentences, actions, attributes_list, dialogue_ids):
+        obj['results'].append(SentenceData(turn_id=turn_id,
+                                           sentence=sentence,
+                                           action=action,
+                                           attributes=[
+                                               x for x in attributes if x not in excluded_attributes and x not in exclude_attributes],
+                                           dialogue_id=dialogue_id))
 
     return obj
+
+
+class SIMMCDataset(torch.utils.data.Dataset):
+    def __init__(self, train: bool = True, concatenate: bool = False, min_attribute_occ: int = 0, exclude_attributes: typing.List[str] = []):
+        api = GetAPI(train, concatenate=concatenate, min_attribute_occ=min_attribute_occ, return_excluded_attributes=min_attribute_occ>0, exclude_attributes=exclude_attributes)
+
+        self.tokenizer = transformers.BertTokenizer.from_pretrained(
+            'bert-base-uncased')
+        self.encodings = self.tokenizer([d.sentence for d in api['results']],
+                                        add_special_tokens=False,
+                                        truncation=False,
+                                        padding=True,
+                                        return_attention_mask=True,
+                                        return_tensors="pt")
+        self.attributes = mlb_attributes.transform([d.attributes for d in api['results']])
+        self.actions = le_actions.transform([d.action for d in api['results']])
+        self.turn_ids = [d.turn_id for d in api['results']]
+        self.dialogue_ids = [d.dialogue_id for d in api['results']]
+        self.excluded_attributes = api['excluded_attributes'] if min_attribute_occ > 0 or exclude_attributes else []
+
+    def __len__(self):
+        return len(self.actions)
+
+    def __getitem__(self, idx):
+        item = {key: torch.tensor(val[idx])
+                for key, val in self.encodings.items()}
+        item["attributes"] = torch.tensor(
+            self.attributes[idx], dtype=torch.float32)
+        item["action"] = torch.tensor(self.actions[idx])
+        item["turn_id"] = self.turn_ids[idx]
+
+        if self.dialogue_ids is not None:
+            item["dialogue_id"] = self.dialogue_ids[idx]
+
+        return item
