@@ -26,17 +26,28 @@ To close the virtual environment you just need to exit the console session
 (.env) $ exit
 ```
 
-To run tests and scripts you must source the virtual environment every time you open a new console session.
+## How to run
 
-```bash
-(.env) $ pytest
+Inside the _simmc_ directroy,
 
-============================= test session starts ==============================
-platform darwin -- Python 3.9.5, pytest-6.2.4, py-1.10.0, pluggy-0.13.1
-rootdir: /Users/pettinz/Developer/machine_learning/ML_project
-collected 3 items                                                                                                                                                                                                                                                                                                
+```python
+from dataset import SIMMCDataset
+from model import SIMMCModel
 
-simmc/dataset_test.py ...                                                 [100%]
 
-============================== 3 passed in 7.20s ===============================
+
+train_dataset = SIMMCDataset(train=True, min_attribute_occ=2, concatenate=True)
+validation_dataset = SIMMCDataset(train=False, exclude_attributes=train_dataset.excluded_attributes)
+# test_dataset = ...
+
+m = SIMMCModel()
+m.train(train_dataset, validation_dataset)
+# m.validate(test_dataset)
 ```
+
+## To be tested
+
+- [x] API loader
+- [x] Dataset creation
+- [ ] `.tolist()` _lines 152,153,166,167_ of _model.py_
+- [ ] `model_actions` generation _lines 174-190_ of _model.py_

@@ -1,3 +1,6 @@
 sklearn
 pytest
 numpy
+torch
+transformers
+tokenizers
