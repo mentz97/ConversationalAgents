@@ -70,6 +70,57 @@ class SentenceData():
         self.attributes = attributes
         self.dialogue_id = dialogue_id
 
+le_actions = sklearn.preprocessing.LabelEncoder()
+mlb_attributes = sklearn.preprocessing.MultiLabelBinarizer()
+
+le_actions.fit(['SearchDatabase',
+                'SearchMemory',
+                'SpecifyInfo',
+                'AddToCart',
+                'None'])
+mlb_attributes.fit([['ageRange',
+                     'amountInStock',
+                     'availableSizes',
+                     'brand',
+                     'clothingCategory',
+                     'clothingStyle',
+                     'color',
+                     'customerRating',
+                     'dressStyle',
+                     'embellishment',
+                     'forGender',
+                     'forOccasion',
+                     'hasPart',
+                     'hemLength',
+                     'hemStyle',
+                     'info',
+                     'jacketStyle',
+                     'madeIn',
+                     'material',
+                     'necklineStyle',
+                     'pattern',
+                     'price',
+                     'sequential',
+                     'size',
+                     'skirtLength',
+                     'skirtStyle',
+                     'sleeveLength',
+                     'sleeveStyle',
+                     'soldBy',
+                     'sweaterStyle',
+                     'waistStyle',
+                     'warmthRating',
+                     'waterResistance']])
+
+
+class SentenceData():
+    def __init__(self, turn_id: int, sentence: str, action: str, attributes: typing.List[str], dialogue_id: int) -> None:
+        self.turn_id = turn_id
+        self.sentence = sentence
+        self.action = action
+        self.attributes = attributes
+        self.dialogue_id = dialogue_id
+
 
 def GetAPI(train: bool = False,
            test: bool = False,
@@ -97,12 +148,12 @@ def GetAPI(train: bool = False,
             for dialogue in dialogues:
                 concatenated = ""
                 for sentence in dialogue:
-                    concatenated = "[CLS] " + sentence['transcript'] + " [SEP] " if concatenated == "" else concatenated + \
-                        sentence['transcript'] + " [SEP] "
+                    concatenated = "[CLS] " + sentence['transcript'] if concatenated == "" else concatenated + \
+                        " [SEP] " + sentence['transcript']
                     sentences.append(concatenated)
         else:
             sentences = [sentence['transcript']
-                         for dialogue in dialogues for sentence in dialogue]
+                            for dialogue in dialogues for sentence in dialogue]
 
     with open(__testAPIFile if test else __trainAPIFile if train else __valAPIFile, 'r') as file:
         data = json.load(file)

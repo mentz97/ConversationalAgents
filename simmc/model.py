@@ -7,10 +7,7 @@ import statistics
 import pprint
 import json
 import numpy as np
-import collections
-import argparse
-import os
-import tqdm 
+import tqdm
 
 from action_evaluation import evaluate_action_prediction
 from dataset import le_actions, mlb_attributes, __valAPIFile
@@ -19,8 +16,8 @@ from dataset import le_actions, mlb_attributes, __valAPIFile
 class CustomBertModel(transformers.BertModel):
     def __init__(self, config, num_actions, num_attributes):
         super().__init__(config)
-        self.config=config
-        self.bert=transformers.BertModel(config)
+        self.config = config
+        self.bert = transformers.BertModel(config)
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.classifier_action = torch.nn.Linear(
             config.hidden_size, num_actions)
@@ -41,7 +38,6 @@ class CustomBertModel(transformers.BertModel):
         output_hidden_states=None,
         return_dict=None,
     ):
-
         outputs = self.bert(
             input_ids,
             attention_mask=attention_mask,
@@ -65,17 +61,17 @@ class CustomBertModel(transformers.BertModel):
 
 class SIMMCModel():
     def __init__(self) -> None:
-      self.num_actions=len(le_actions.classes_)
-      self.num_attributes=len(mlb_attributes.classes_)
+        self.num_actions = len(le_actions.classes_)
+        self.num_attributes = len(mlb_attributes.classes_)
 
-      self.bert = CustomBertModel.from_pretrained('bert-base-uncased',
+        self.bert = CustomBertModel.from_pretrained('bert-base-uncased',
                                                     output_attentions=False,
                                                     output_hidden_states=False,
                                                     num_actions=self.num_actions,
                                                     num_attributes=self.num_attributes)
-      self.bert.to('cuda')
+        self.bert.to('cuda')
 
-      self.score=0
+        self.score = 0
 
     def train(self, train_dataset, val_dataset, epochs, device, lr, wd, ss, savepath: str = None):
         warnings.simplefilter("ignore", UserWarning)
@@ -90,7 +86,7 @@ class SIMMCModel():
             train_dataset, batch_size=16, shuffle=True, num_workers=4)
 
         torch.backends.cudnn.benchmark
-        
+
         for epoch in range(epochs):
             print(f"\nEPOCH {epoch}", flush=True)
             self.bert.train()
@@ -121,17 +117,16 @@ class SIMMCModel():
                 go.set_postfix(avg_loss=statistics.mean(losses))
 
             scheduler.step()
-            
+
             # Validation
             action_metrics = self.validate(val_dataset, device)
             pprint.pprint(action_metrics)
 
             newScore = (action_metrics['action_accuracy'] +
-                    action_metrics['attribute_accuracy']) / 2
+                        action_metrics['attribute_accuracy']) / 2
             if savepath is not None and newScore > self.score:
                 self.score = newScore
                 self.bert.save_pretrained(savepath)
-
 
     def validate(self, dataset, device, savepath: str = None):
         warnings.simplefilter("ignore", UserWarning)
@@ -159,7 +154,7 @@ class SIMMCModel():
                                                     num_attributes=self.num_attributes)
             model.to('cuda')
         else:
-            model=self.bert
+            model = self.bert
 
         model.eval()
 
@@ -173,9 +168,11 @@ class SIMMCModel():
             dialogue_ids.extend(batch['dialogue_id'].numpy().tolist())
 
             with torch.no_grad():
-                predict_action, predict_attributes = model(b_input_ids, attention_mask=b_input_mask)
+                predict_action, predict_attributes = model(
+                    b_input_ids, attention_mask=b_input_mask)
                 loss_action = criterion_action(predict_action, b_action)
-                loss_attributes = criterion_attributes(predict_attributes, b_attributes)
+                loss_attributes = criterion_attributes(
+                    predict_attributes, b_attributes)
                 loss = loss_action + loss_attributes
 
             # Accumulate the validation loss.
@@ -188,36 +185,40 @@ class SIMMCModel():
             actions_pred.extend(predict_action)
             attributes_pred.extend(predict_attributes > 0)
 
-        with open('/content/ML_project/simmc/data/fashion_dev_dials_api_calls.json') as gt_actions_json: # __valAPIFile not working
+        # __valAPIFile not working
+        with open('/content/ML_project/simmc/data/fashion_dev_dials_api_calls.json') as gt_actions_json:
             gt_actions = json.load(gt_actions_json)
 
         model_actions = []
-        actions = le_actions.inverse_transform([np.argmax(action) for action in actions_pred])
-        action_predictions = [{k: val for k, val in zip(le_actions.classes_, action)} for action in actions_pred]
-        attribute_predictions = [[k for k, val in zip(mlb_attributes.classes_, attributes) if(val==1)] for attributes in attributes_pred ]
+        actions = le_actions.inverse_transform(
+            [np.argmax(action) for action in actions_pred])
+        action_predictions = [{k: val for k, val in zip(
+            le_actions.classes_, action)} for action in actions_pred]
+        attribute_predictions = [[k for k, val in zip(mlb_attributes.classes_, attributes) if(
+            val == 1)] for attributes in attributes_pred]
 
         for (dialog_id, turn_id, action, action_prediction, attribute_prediction) in zip(dialogue_ids, turn_ids, actions, action_predictions, attribute_predictions):
             model_actions.append({
                 "dialog_id": dialog_id,
-                "predictions": [ 
-                  {
-                    "action": action,
-                    "action_log_prob": action_prediction,
-                    "attributes": {
-                        "attributes": attribute_prediction
-                    },
-                  "turn_id": turn_id }
+                "predictions": [
+                    {
+                        "action": action,
+                        "action_log_prob": action_prediction,
+                        "attributes": {
+                            "attributes": attribute_prediction
+                        },
+                        "turn_id": turn_id}
                 ]
             })
 
         action_metrics = evaluate_action_prediction(gt_actions, model_actions)
         action_metrics['validation_loss'] = total_eval_loss / \
             len(val_dataloader)
-        
+
         if savepath is not None:
-            self.score=(action_metrics['action_accuracy'] +
-                        action_metrics['attribute_accuracy']) / 2
-        
+            self.score = (action_metrics['action_accuracy'] +
+                          action_metrics['attribute_accuracy']) / 2
+
         return action_metrics
 
     def test(self, dataset, device, savepath: str):
@@ -256,9 +257,11 @@ class SIMMCModel():
             dialogue_ids.extend(batch['dialogue_id'].numpy().tolist())
 
             with torch.no_grad():
-                predict_action, predict_attributes = model(b_input_ids, attention_mask=b_input_mask)
+                predict_action, predict_attributes = model(
+                    b_input_ids, attention_mask=b_input_mask)
                 loss_action = criterion_action(predict_action, b_action)
-                loss_attributes = criterion_attributes(predict_attributes, b_attributes)
+                loss_attributes = criterion_attributes(
+                    predict_attributes, b_attributes)
                 loss = loss_action + loss_attributes
 
             # Accumulate the validation loss.
@@ -271,30 +274,32 @@ class SIMMCModel():
             actions_pred.extend(predict_action)
             attributes_pred.extend(predict_attributes > 0)
 
-        with open(...) as gt_actions_json: # test file
+        with open(...) as gt_actions_json:  # test file
             gt_actions = json.load(gt_actions_json)
 
         model_actions = []
-        actions = le_actions.inverse_transform([np.argmax(action) for action in actions_pred])
-        action_predictions = [{k: val for k, val in zip(le_actions.classes_, action)} for action in actions_pred]
-        attribute_predictions = [[k for k, val in zip(mlb_attributes.classes_, attributes) if(val==1)] for attributes in attributes_pred ]
+        actions = le_actions.inverse_transform(
+            [np.argmax(action) for action in actions_pred])
+        action_predictions = [{k: val for k, val in zip(
+            le_actions.classes_, action)} for action in actions_pred]
+        attribute_predictions = [[k for k, val in zip(mlb_attributes.classes_, attributes) if(
+            val == 1)] for attributes in attributes_pred]
 
         for (dialog_id, turn_id, action, action_prediction, attribute_prediction) in zip(dialogue_ids, turn_ids, actions, action_predictions, attribute_predictions):
             model_actions.append({
                 "dialog_id": dialog_id,
-                "predictions": [ 
-                  {
-                    "action": action,
-                    "action_log_prob": action_prediction,
-                    "attributes": {
-                        "attributes": attribute_prediction
-                    },
-                  "turn_id": turn_id }
+                "predictions": [
+                    {
+                        "action": action,
+                        "action_log_prob": action_prediction,
+                        "attributes": {
+                            "attributes": attribute_prediction
+                        },
+                        "turn_id": turn_id}
                 ]
             })
 
         action_metrics = evaluate_action_prediction(gt_actions, model_actions)
-        action_metrics['test_loss'] = total_eval_loss / \
-            len(val_dataloader)
+        action_metrics['test_loss'] = total_eval_loss / len(val_d)
 
         return action_metrics

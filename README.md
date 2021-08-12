@@ -51,3 +51,4 @@ m.train(train_dataset, validation_dataset)
 - [x] Dataset creation
 - [ ] `.tolist()` _lines 152,153,166,167_ of _model.py_
 - [ ] `model_actions` generation _lines 174-190_ of _model.py_
+- [ ] no `val_dataloader` in _test_ function in _model.py_. Why using a test function if there is the validate?
