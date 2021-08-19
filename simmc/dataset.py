@@ -10,65 +10,14 @@ import sklearn.preprocessing
 __location__ = os.path.realpath(os.path.join(
     os.getcwd(), os.path.dirname(__file__)))
 __trainFile = os.path.join(__location__, 'data/fashion_train_dials.json')
-__trainAPIFile = os.path.join(
+trainAPIFile = os.path.join(
     __location__, 'data/fashion_train_dials_api_calls.json')
 __valFile = os.path.join(__location__, 'data/fashion_dev_dials.json')
-__valAPIFile = os.path.join(
+valAPIFile = os.path.join(
     __location__, 'data/fashion_dev_dials_api_calls.json')
 __testFile = os.path.join(__location__, 'data/fashion_devtest_dials.json')
-__testAPIFile = os.path.join(
+testAPIFile = os.path.join(
     __location__, 'data/fashion_devtest_dials_api_calls.json')
-
-le_actions = sklearn.preprocessing.LabelEncoder()
-mlb_attributes = sklearn.preprocessing.MultiLabelBinarizer()
-
-le_actions.fit(['SearchDatabase',
-                'SearchMemory',
-                'SpecifyInfo',
-                'AddToCart',
-                'None'])
-mlb_attributes.fit([['ageRange',
-                     'amountInStock',
-                     'availableSizes',
-                     'brand',
-                     'clothingCategory',
-                     'clothingStyle',
-                     'color',
-                     'customerRating',
-                     'dressStyle',
-                     'embellishment',
-                     'forGender',
-                     'forOccasion',
-                     'hasPart',
-                     'hemLength',
-                     'hemStyle',
-                     'info',
-                     'jacketStyle',
-                     'madeIn',
-                     'material',
-                     'necklineStyle',
-                     'pattern',
-                     'price',
-                     'sequential',
-                     'size',
-                     'skirtLength',
-                     'skirtStyle',
-                     'sleeveLength',
-                     'sleeveStyle',
-                     'soldBy',
-                     'sweaterStyle',
-                     'waistStyle',
-                     'warmthRating',
-                     'waterResistance']])
-
-
-class SentenceData():
-    def __init__(self, turn_id: int, sentence: str, action: str, attributes: typing.List[str], dialogue_id: int) -> None:
-        self.turn_id = turn_id
-        self.sentence = sentence
-        self.action = action
-        self.attributes = attributes
-        self.dialogue_id = dialogue_id
 
 le_actions = sklearn.preprocessing.LabelEncoder()
 mlb_attributes = sklearn.preprocessing.MultiLabelBinarizer()
@@ -153,9 +102,9 @@ def GetAPI(train: bool = False,
                     sentences.append(concatenated)
         else:
             sentences = [sentence['transcript']
-                            for dialogue in dialogues for sentence in dialogue]
+                         for dialogue in dialogues for sentence in dialogue]
 
-    with open(__testAPIFile if test else __trainAPIFile if train else __valAPIFile, 'r') as file:
+    with open(testAPIFile if test else trainAPIFile if train else valAPIFile, 'r') as file:
         data = json.load(file)
 
         dialogue_ids = [i['dialog_id'] for i in data for j in i['actions']]
@@ -188,7 +137,7 @@ def GetAPI(train: bool = False,
 class SIMMCDataset(torch.utils.data.Dataset):
     def __init__(self, train: bool = True, test: bool = False, concatenate: bool = False, min_attribute_occ: int = 0, exclude_attributes: typing.List[str] = []):
         api = GetAPI(train, test, concatenate=concatenate, min_attribute_occ=min_attribute_occ,
-                     return_excluded_attributes=min_attribute_occ > 0, exclude_attributes=exclude_attributes)
+                     return_excluded_attributes=(min_attribute_occ > 0 or exclude_attributes), exclude_attributes=exclude_attributes)
 
         self.tokenizer = transformers.BertTokenizer.from_pretrained(
             'bert-base-uncased')

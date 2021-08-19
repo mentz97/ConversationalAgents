@@ -10,7 +10,7 @@ import numpy as np
 import tqdm
 
 from action_evaluation import evaluate_action_prediction
-from dataset import le_actions, mlb_attributes, __valAPIFile
+from dataset import le_actions, mlb_attributes, valAPIFile, testAPIFile
 
 
 class CustomBertModel(transformers.BertModel):
@@ -186,7 +186,7 @@ class SIMMCModel():
             attributes_pred.extend(predict_attributes > 0)
 
         # __valAPIFile not working
-        with open('/content/ML_project/simmc/data/fashion_dev_dials_api_calls.json') as gt_actions_json:
+        with open(valAPIFile) as gt_actions_json:
             gt_actions = json.load(gt_actions_json)
 
         model_actions = []
@@ -274,7 +274,7 @@ class SIMMCModel():
             actions_pred.extend(predict_action)
             attributes_pred.extend(predict_attributes > 0)
 
-        with open(...) as gt_actions_json:  # test file
+        with open(testAPIFile) as gt_actions_json:  # test file
             gt_actions = json.load(gt_actions_json)
 
         model_actions = []
