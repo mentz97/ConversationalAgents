@@ -274,7 +274,7 @@ class SIMMCModel():
             actions_pred.extend(predict_action)
             attributes_pred.extend(predict_attributes > 0)
 
-        with open(testAPIFile) as gt_actions_json:  # test file
+        with open(testAPIFile) as gt_actions_json:  
             gt_actions = json.load(gt_actions_json)
 
         model_actions = []
@@ -300,6 +300,6 @@ class SIMMCModel():
             })
 
         action_metrics = evaluate_action_prediction(gt_actions, model_actions)
-        action_metrics['test_loss'] = total_eval_loss / len(val_d)
+        action_metrics['test_loss'] = total_eval_loss / len(test_dataloader)
 
         return action_metrics
