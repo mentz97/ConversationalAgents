@@ -81,10 +81,10 @@ class SIMMCDataset(torch.utils.data.Dataset):
                  test: bool = False,
                  concatenate: bool = False,
                  min_attribute_occ: int = 0,
-                 exclude_attributes: typing.List[str] = []
-                 ):
+                 exclude_attributes: typing.List[str] = [],
+                 preprocess: typing.Callable[[str], str] = __preprocess__):
         api = self.__getapi__(train, test, concatenate=concatenate, min_attribute_occ=min_attribute_occ,
-                              return_excluded_attributes=(min_attribute_occ > 0 or exclude_attributes), exclude_attributes=exclude_attributes)
+                              return_excluded_attributes=(min_attribute_occ > 0 or exclude_attributes), exclude_attributes=exclude_attributes, preprocess=preprocess)
 
         self.tokenizer = transformers.BertTokenizer.from_pretrained(
             'bert-base-uncased')
