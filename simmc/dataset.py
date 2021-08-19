@@ -10,13 +10,13 @@ import spacy
 
 __location__ = os.path.realpath(os.path.join(
     os.getcwd(), os.path.dirname(__file__)))
-__trainFile = os.path.join(__location__, 'data/fashion_train_dials.json')
+trainFile = os.path.join(__location__, 'data/fashion_train_dials.json')
 trainAPIFile = os.path.join(
     __location__, 'data/fashion_train_dials_api_calls.json')
-__valFile = os.path.join(__location__, 'data/fashion_dev_dials.json')
+valFile = os.path.join(__location__, 'data/fashion_dev_dials.json')
 valAPIFile = os.path.join(
     __location__, 'data/fashion_dev_dials_api_calls.json')
-__testFile = os.path.join(__location__, 'data/fashion_devtest_dials.json')
+testFile = os.path.join(__location__, 'data/fashion_devtest_dials.json')
 testAPIFile = os.path.join(
     __location__, 'data/fashion_devtest_dials_api_calls.json')
 
@@ -133,7 +133,7 @@ class SIMMCDataset(torch.utils.data.Dataset):
 
         obj = {}
 
-        with open(__testFile if test else __trainFile if train else __valFile, 'r') as file:
+        with open(testFile if test else trainFile if train else valFile, 'r') as file:
             data = json.load(file)
 
             dialogues = list(
