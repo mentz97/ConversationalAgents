@@ -6,7 +6,7 @@ import torch
 import transformers
 import sklearn.preprocessing
 import spacy
-
+import tqdm
 
 __location__ = os.path.realpath(os.path.join(
     os.getcwd(), os.path.dirname(__file__)))
@@ -144,15 +144,15 @@ class SIMMCDataset(torch.utils.data.Dataset):
 
             if concatenate:
                 sentences = []
-                for dialogue in dialogues:
+                for dialogue in tqdm.tqdm(dialogues):
                     concatenated = ""
                     for sentence in dialogue:
-                        concatenated = "[CLS] " + preprocess(sentence['transcript']) if concatenated == "" else concatenated + \
-                            " [SEP] " + preprocess(sentence['transcript'])
+                        concatenated = "[CLS] " + preprocess(sentence['transcript']) + " [SEP] " if concatenated == "" else concatenated + \
+                            preprocess(sentence['transcript']) + " [SEP] " 
                         sentences.append(concatenated)
             else:
                 sentences = [preprocess(sentence['transcript'])
-                             for dialogue in dialogues for sentence in dialogue]
+                             for dialogue in tqdm.tqdm(dialogues) for sentence in dialogue]
 
         with open(testAPIFile if test else trainAPIFile if train else valAPIFile, 'r') as file:
             data = json.load(file)
