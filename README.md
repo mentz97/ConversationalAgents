@@ -8,8 +8,8 @@
 Clone the **repository**
 
 ```bash
-$ git clone https://github.com/mentz97/ML_project.git
-$ cd ML_project
+$ git clone https://github.com/mentz97/ConversationalAgents.git
+$ cd ConversationalAgents
 ```
 
 Create and setup the **virtual environment**. To check whether the steps below have been successful or not, the console notify you if you are currently on a virtual environment or not.
