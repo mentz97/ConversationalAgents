@@ -32,23 +32,30 @@ Inside the _simmc_ directroy,
 
 ```python
 from dataset import SIMMCDataset
+from preprocessing import preprocess
 from model import SIMMCModel
 
-
-
-train_dataset = SIMMCDataset(train=True, min_attribute_occ=2, concatenate=True)
-validation_dataset = SIMMCDataset(train=False, exclude_attributes=train_dataset.excluded_attributes)
-# test_dataset = ...
+train_dataset = SIMMCDataset(train=True, min_attribute_occ=5, concatenate=True, preprocess=preprocess)
+validation_dataset = SIMMCDataset(train=False, concatenate=True, exclude_attributes=train_dataset.excluded_attributes, preprocess=preprocess)
+test_dataset = SIMMCDataset(train=False, test=True, concatenate=True, exclude_attributes=train_dataset.excluded_attributes, preprocess=preprocess)
 
 m = SIMMCModel()
-m.train(train_dataset, validation_dataset)
-# m.validate(test_dataset)
-```
+
+savepath='./best_model' #where to save and retrive the best model
+EPOCHS=20
+DEVICE='cuda'
+LR=3e-5 #learning rate
+WD=5e-5 #weight decay
+SS=5 #step_size scheduler
+
+m.train(train_dataset, validation_dataset, EPOCHS, DEVICE, LR, WD, SS, savepath=savepath)
+m.validate(validation_dataset, DEVICE, savepath=savepath)
+m.test(test_dataset, DEVICE, savepath=savepath)
 
 ## To be tested
 
 - [x] API loader
 - [x] Dataset creation
-- [ ] `.tolist()` _lines 152,153,166,167_ of _model.py_
-- [ ] `model_actions` generation _lines 174-190_ of _model.py_
-- [ ] no `val_dataloader` in _test_ function in _model.py_. Why using a test function if there is the validate?
+- [x] `.tolist()` _lines 152,153,166,167_ of _model.py_
+- [x] `model_actions` generation _lines 174-190_ of _model.py_
+- [x] no `val_dataloader` in _test_ function in _model.py_. Why using a test function if there is the validate?
