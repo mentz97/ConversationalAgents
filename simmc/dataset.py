@@ -182,15 +182,3 @@ class SIMMCDataset(torch.utils.data.Dataset):
                                                dialogue_id=dialogue_id))
 
         return obj
-
-
-# def preprocess(sentence: str) -> str:
-#     nlp = spacy.load("en_core_web_sm")
-# 
-#     doc = nlp(sentence)
-#     for token in doc:
-#         if token.pos_ == "VERB" or token.pos_ == "AUX":
-#             sentence = sentence.replace(token.text, " " + token.lemma_, 1) if token.shape_.startswith(
-#                 "'") else sentence.replace(token.text, token.lemma_, 1)
-# 
-#     return sentence
