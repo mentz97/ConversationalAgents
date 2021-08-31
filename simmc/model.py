@@ -170,7 +170,7 @@ class SIMMCModel():
             with torch.no_grad():
                 predict_action, predict_attributes = model(
                     b_input_ids, attention_mask=b_input_mask)
-                predict_action=torch.flip(predict_action, [1])
+                #predict_action=torch.flip(predict_action, [1])
                 loss_action = criterion_action(predict_action, b_action)
                 loss_attributes = criterion_attributes(
                     predict_attributes, b_attributes)
@@ -260,7 +260,7 @@ class SIMMCModel():
             with torch.no_grad():
                 predict_action, predict_attributes = model(
                     b_input_ids, attention_mask=b_input_mask)
-                predict_action=torch.flip(predict_action, [1])
+                #predict_action=torch.flip(predict_action, [1])
                 loss_action = criterion_action(predict_action, b_action)
                 loss_attributes = criterion_attributes(
                     predict_attributes, b_attributes)
